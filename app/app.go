@@ -28,6 +28,7 @@ func Start(){
     r.HandleFunc("/transfer",h.TransferAmount).Methods(http.MethodPost)
     r.HandleFunc("/CreateAccount", h.CreateAccount).Methods(http.MethodPost)
     r.HandleFunc("/SetPin",h.SetPin).Methods(http.MethodPost)
+    r.HandleFunc("/CheckBalance",h.CheckBalance).Methods(http.MethodPost)
  
     log.Println("Server running on:8080")
     http.ListenAndServe(":8080", r)

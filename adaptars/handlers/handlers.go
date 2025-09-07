@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"log"
+	"fmt"
 )
 
 
@@ -16,6 +17,25 @@ type Handlers struct{
 
 func NewHandler(s *service.BankingService)*Handlers{
    return &Handlers{Service: s}
+}
+
+
+func(h *Handlers)CheckBalance(w http.ResponseWriter,r *http.Request){
+	var input struct{
+		AccountNo string
+		Pin       string
+	}
+	if err:=json.NewDecoder(r.Body).Decode(&input);err!=nil{
+     http.Error(w,"Failed to Decode data",http.StatusBadRequest)
+		return
+	}
+    balance,err:= h.Service.Balance(input.AccountNo,input.Pin)
+	if err!=nil{
+	http.Error(w,err.Error(),http.StatusInternalServerError)
+		return	
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fmt.Sprintf("%.2f", balance)))
 }
 
 func(h *Handlers)WithdrawAmount(w http.ResponseWriter,r *http.Request){

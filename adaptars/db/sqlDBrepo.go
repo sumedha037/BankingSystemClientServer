@@ -113,7 +113,7 @@ func(d *AccountSqlDB)SaveBalance(accountNo string,amount float64)error{
 	}
 
 	if rowsAffected==0{
-		return fmt.Errorf("no acccount with this accpuntNo %v",accountNo)
+		return fmt.Errorf("no acccount with this accountNo %v",accountNo)
 	}
 
 	return nil

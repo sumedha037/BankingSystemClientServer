@@ -37,7 +37,9 @@ func (b *BankingService) DecreaseAmount(accountNo string,amount float64)error{
    currentAmount,err:=b.AccountRepo.GetBalance(accountNo)
   if err!=nil{
     log.Printf("unable to get current balance %v",err)
+    return err
   }
+  
   if currentAmount<amount{
     return fmt.Errorf("not enough balance")
   }

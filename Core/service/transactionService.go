@@ -30,7 +30,9 @@ func NewBankingService(a ports.AccountRepository,c ports.CustomerRepository,t po
 
 func(b *BankingService) Withdraw(accountno string,amount float64,Pin string)error{
 
-	 b.ValidateUser(accountno,Pin)
+	ok,err:=b.ValidateUser(accountno,Pin);if!ok{
+		return err
+	}
 
 	 balance,_:=b.AccountRepo.GetBalance(accountno)
 	 if balance>amount{
@@ -71,7 +73,7 @@ func(b *BankingService) Transfer(fromAccountNo string,fromAccountPin string,toAc
 	if err!=nil{
 		status="Failed"
 	}
-	err=b.IncreaseAmount(fromAccountNo,Amount)
+	err=b.IncreaseAmount(toAcountNo,Amount)
 	if err!=nil{
 		status="Failed"
 	}
@@ -97,14 +99,17 @@ func(b *BankingService)SetPin(accountNo string,OldPin string, NewPin string)erro
 
 func(b *BankingService)CreateAccount(customer domain.Customer)domain.Account{
 	var account domain.Account
-    b.CustomerRepo.SaveCustomer(customer)
+   err:= b.CustomerRepo.SaveCustomer(customer)
+   if err!=nil{
+	log.Println("failed to save customer in database")
+	return domain.Account{}
+   }
 
- 
 	AccountNo:=b.GenerateSequentialID(12)
 	Pin:=b.GenerateSequentialID(6)
 	Balance:=0.00
 
-	err:=b.AccountRepo.SaveAccount(AccountNo,customer.CustomerId,customer.AccountType,Balance,Pin)
+	err=b.AccountRepo.SaveAccount(AccountNo,customer.CustomerId,customer.AccountType,Balance,Pin)
 	if err!=nil{
 	    log.Printf("Failed to Create an Account %v",err)
 		return domain.Account{}
@@ -116,4 +121,21 @@ func(b *BankingService)CreateAccount(customer domain.Customer)domain.Account{
 	return domain.Account{}
    }
     return account
+}
+
+
+func(b *BankingService) Balance(accountno string,Pin string)(float64,error){
+
+	 ok,err:=b.ValidateUser(accountno,Pin);if !ok{
+		log.Println("Unauthorized User")
+		return 0,err
+	 }
+
+	 balance,err:=b.AccountRepo.GetBalance(accountno)
+	 if err!=nil{
+		log.Println("failed to get the balance")
+		return 0,err
+	 }
+	 
+	 return balance,nil
 }
