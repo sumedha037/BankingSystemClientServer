@@ -24,3 +24,10 @@ type Transaction struct {
 	TimeStamp     string
 	Status        string
 }
+
+// type CashTransction struct{
+// 	TransactionId string
+// 	Amount    	float64
+// 	AccountNo     string
+// 	TimeStamp     string
+// } 

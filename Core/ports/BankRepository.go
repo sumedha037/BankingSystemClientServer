@@ -9,13 +9,13 @@ type CustomerRepository interface {
 type AccountRepository interface{
     GetPin(accountNo string)(string,error)
 	ChangePin(accountNo string,Pin string)error
-  	CreateAccount(customerId string,accountType string)(domain.Account,error)
+  	SaveAccount(AccountNo string,customerId string,accountType string,Balance float64,Pin string)(error)
+	GetAccountDetails(AccountNo string)(domain.Account,error)
 	GetBalance(accountNo string)(float64,error)
-	IncreaseBalance(accountNo string,amount float64)error
-	DecreaseBalance(accountNo string,amount float64)error
+	SaveBalance(accountNo string,amount float64)error
 }
 
 type TransactionRepository interface{
-	SaveTransction(transactionId string,fromAccountNo string,toAcountNo string,Amount float64,timestamp string)error
+	SaveTransction(transactionId string,fromAccountNo string,toAcountNo string,Amount float64,timestamp string,status string)error
 	GetTransactionDetail(transactionId string)(domain.Transaction,error)
 }
