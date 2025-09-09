@@ -81,15 +81,24 @@ func transactionMenu() {
 
 
 func createAccount() {
-	var name, pin string
-	fmt.Print("Enter name: ")
-	fmt.Scan(&name)
-	fmt.Print("Enter pin: ")
-	fmt.Scan(&pin)
+	var Username,Name,Email,Phone,AccountType string
+	fmt.Print("Enter Username: ")
+	fmt.Scan(&Username)
+	fmt.Print("Enter Name: ")
+	fmt.Scan(&Name)
+	fmt.Print("Enter Email: ")
+	fmt.Scan(&Email)
+	fmt.Print("Enter PhoneNo: ")
+	fmt.Scan(&Phone)
+	fmt.Print("Enter Account Type: ")
+	fmt.Scan(&AccountType)
 
 	reqBody := map[string]string{
-		"name": name,
-		"pin":  pin,
+		"CustomerId": Username,
+		"Name":  Name,
+		"Email":Email,
+		"Phone":Phone,
+		"AccountType":AccountType,
 	}
 	data, _ := json.Marshal(reqBody)
 
@@ -120,8 +129,8 @@ func login() {
 	fmt.Scan(&pin)
 
 	reqBody := map[string]string{
-		"accountNo": accountNo,
-		"pin":       pin,
+		"AccountNo": accountNo,
+		"Pin":       pin,
 	}
 	data, _ := json.Marshal(reqBody)
 
@@ -136,7 +145,7 @@ func login() {
 	var res map[string]string
 	json.Unmarshal(body, &res)
 
-	if token, ok := res["token"]; ok {
+	if token, ok := res["Token"]; ok {
 		jwtToken = token
 		fmt.Println("Login successful! JWT stored automatically.")
 	} else {
@@ -145,15 +154,18 @@ func login() {
 }
 
 func setPin() {
-	var accountNo, pin string
+	var accountNo, OldPin,NewPin string
 	fmt.Print("Enter account number: ")
 	fmt.Scan(&accountNo)
+	fmt.Print("Enter current pin: ")
+	fmt.Scan(&OldPin)
 	fmt.Print("Enter new pin: ")
-	fmt.Scan(&pin)
+	fmt.Scan(&NewPin)
 
 	reqBody := map[string]string{
-		"accountNo": accountNo,
-		"pin":       pin,
+		"AccountNo": accountNo,
+		"OldPin":       OldPin,
+		"NewPin":       NewPin,
 	}
 	data, _ := json.Marshal(reqBody)
 
@@ -209,9 +221,9 @@ func transfer() {
 	fmt.Scan(&pin)
 
 	reqBody := map[string]interface{}{
-		"pin":       pin,
-		"amount":    amount,
-		"toAccount": toAccount,
+		"FromAccountPin": pin,
+		"ToAccountNo": toAccount,
+		"Amount": amount,
 	}
 	callProtectedAPI("/Transfer", reqBody)
 }
@@ -233,7 +245,7 @@ func callProtectedAPI(endpoint string, reqBody interface{}) {
 	data, _ := json.Marshal(reqBody)
 	req, _ := http.NewRequest("POST", serverURL+endpoint, bytes.NewBuffer(data))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Auth-Token", jwtToken) // automatically include JWT
+	req.Header.Set("X-Auth-Token", jwtToken) 
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -245,4 +257,9 @@ func callProtectedAPI(endpoint string, reqBody interface{}) {
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	fmt.Println(string(body))
+
+	if resp.StatusCode!=http.StatusOK{
+	    mainMenu()
+		return
+	}
 }
