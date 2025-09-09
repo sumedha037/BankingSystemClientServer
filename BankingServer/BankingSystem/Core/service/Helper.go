@@ -26,8 +26,13 @@ func(b *BankingService) ValidateUser(accountNo string,Pin string)(bool,error){
 
 
 
-func (b *BankingService) IncreaseAmount(accountNo string,amount float64)error{
-   currentAmount,err:=b.AccountRepo.GetBalance(accountNo)
+func (b *BankingService) IncreaseAmount(AccountNo string,amount float64)error{
+
+  if AccountNo==""{
+    return customerrors.NewServiceError("Increase Amount",fmt.Errorf("invalid Account"))
+  }
+
+   currentAmount,err:=b.AccountRepo.GetBalance(AccountNo)
   if err!=nil{
     log.Printf("unable to get current balance %v",err)
     return customerrors.NewServiceError("Increase Amount",err)
@@ -37,7 +42,7 @@ func (b *BankingService) IncreaseAmount(accountNo string,amount float64)error{
     return customerrors.NewServiceError("IncreaseAmount",fmt.Errorf("amount less than zero"))
   }
   currentAmount+=amount
-  return b.AccountRepo.SaveBalance(accountNo,currentAmount)
+  return b.AccountRepo.SaveBalance(AccountNo,currentAmount)
 }
 
 

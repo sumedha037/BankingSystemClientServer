@@ -93,15 +93,39 @@ func (d *AccountSqlDB)GetAccountDetails(AccountNo string)(domain.Account,error){
 	return Account,nil
 }
 
-func(d *AccountSqlDB)GetBalance(accountNo string)(float64,error){
-	var balance float64
-	err:=d.db.QueryRow("SELECT Balance from Account WHERE AccountNo=?",accountNo).Scan(&balance)
-	if err!=nil{
-		return 0,customerrors.NewRepoError("GetBalance",err)
-	}
+// func(d *AccountSqlDB)GetBalance(accountNo string)(float64,error){
+// 	var balance float64
+// 	err:=d.db.QueryRow("SELECT Balance From Account WHERE AccountNo=?",accountNo).Scan(&balance)
+// 	if err!=nil{
+// 		return 0,customerrors.NewRepoError("GetBalance",err)
+// 	}
  
-	return balance,nil
+// 	return balance,nil
+// }
+
+func (d *AccountSqlDB) GetBalance(AccountNo string) (float64, error) {
+    var balance float64
+
+
+    log.Printf("Attempting to fetch balance for AccountNo: %s", AccountNo)
+
+    err := d.db.QueryRow("SELECT Balance FROM Account WHERE AccountNo = ?", AccountNo).Scan(&balance)
+
+    if err == sql.ErrNoRows {
+        log.Printf("No account found with AccountNo: %s", AccountNo)
+        return 0, customerrors.NewRepoError("GetBalance", fmt.Errorf("account not found"))
+    }
+
+    
+    if err != nil {
+        log.Printf("Database error while fetching balance for AccountNo %s: %v", AccountNo, err)
+        return 0, customerrors.NewRepoError("GetBalance", err)
+    }
+
+
+    return balance, nil
 }
+
 
 func(d *AccountSqlDB)SaveBalance(accountNo string,amount float64)error{
 

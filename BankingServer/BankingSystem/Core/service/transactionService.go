@@ -52,12 +52,17 @@ func(b *BankingService) Deposite(accountno string,amount float64,Pin string)erro
   return nil
 }
 
-func(b *BankingService) Transfer(fromAccountNo string,fromAccountPin string,toAcountNo string,Amount float64)(string,error){
+func(b *BankingService) Transfer(fromAccountNo string,fromAccountPin string,toAccountNo string,Amount float64)(string,error){
     var status string
 
-	if fromAccountNo==toAcountNo{
-		return "",customerrors.NewServiceError("Transfer: r",fmt.Errorf("cannot transfer money in same account"))
+	if fromAccountNo==""||toAccountNo==""{
+		return "",customerrors.NewServiceError("Transfer: r",fmt.Errorf("cannot be empty"))
 	}
+
+	if Amount<=0{
+		return "",customerrors.NewServiceError("Transfer: r",fmt.Errorf("amount less than zero"))
+	}
+	
 
 	ok,err:=b.ValidateUser(fromAccountNo,fromAccountPin);if !ok{
 		return "",customerrors.NewServiceError("Transfer:Unauthorized User",err)
@@ -72,14 +77,14 @@ func(b *BankingService) Transfer(fromAccountNo string,fromAccountPin string,toAc
 	if err!=nil{
 		return "",customerrors.NewServiceError("transfer",err)
 	}
-	err=b.IncreaseAmount(toAcountNo,Amount)
+	err=b.IncreaseAmount(toAccountNo,Amount)
 	if err!=nil{
 		return "",customerrors.NewServiceError("transfer",err)
 	}
 
 	status="Successfull"
 
-	b.TransactionRepo.SaveTransaction(id,fromAccountNo,toAcountNo,Amount,formattedTime,status)
+	b.TransactionRepo.SaveTransaction(id,fromAccountNo,toAccountNo,Amount,formattedTime,status)
 	 return id,nil
 }
 
