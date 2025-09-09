@@ -1,8 +1,12 @@
-package service 
-import "log"
-import "fmt"
-import "os"
-import "strconv"
+package service
+
+import (
+	customerrors "BankingSystem/customErrors"
+	"fmt"
+	"log"
+	"os"
+	"strconv"
+)
 
 
 
@@ -10,11 +14,11 @@ func(b *BankingService) ValidateUser(accountNo string,Pin string)(bool,error){
 
    s,err:=b.AccountRepo.GetPin(accountNo)
    if err!=nil{
-    return false,fmt.Errorf("unable to get the pin %v",err)
+    return false,customerrors.NewServiceError("ValidateUser",err)
    }
 
    if s!=Pin{
-    return false,fmt.Errorf("invalid Password")
+    return false,customerrors.NewServiceError("ValidateUser",fmt.Errorf("unauthorized User"))
    }
    log.Println(s)
  return true,nil
@@ -26,6 +30,11 @@ func (b *BankingService) IncreaseAmount(accountNo string,amount float64)error{
    currentAmount,err:=b.AccountRepo.GetBalance(accountNo)
   if err!=nil{
     log.Printf("unable to get current balance %v",err)
+    return customerrors.NewServiceError("Increase Amount",err)
+  }
+
+  if amount<0{
+    return customerrors.NewServiceError("IncreaseAmount",fmt.Errorf("amount less than zero"))
   }
   currentAmount+=amount
   return b.AccountRepo.SaveBalance(accountNo,currentAmount)
@@ -37,11 +46,13 @@ func (b *BankingService) DecreaseAmount(accountNo string,amount float64)error{
    currentAmount,err:=b.AccountRepo.GetBalance(accountNo)
   if err!=nil{
     log.Printf("unable to get current balance %v",err)
-    return err
+    return customerrors.NewServiceError("DecreaseAmount",err)
   }
-  
+  if currentAmount<0{
+    return customerrors.NewServiceError("DecreaseAmount",fmt.Errorf("amount less than zero"))
+  }
   if currentAmount<amount{
-    return fmt.Errorf("not enough balance")
+    return customerrors.NewServiceError("DecreaseAmount",fmt.Errorf("insufficient Amount"))
   }
   currentAmount-=amount
   return b.AccountRepo.SaveBalance(accountNo,currentAmount)

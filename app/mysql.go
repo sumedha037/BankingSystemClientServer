@@ -31,7 +31,6 @@ func GetInstance() *sql.DB {
         dbname := os.Getenv("DB_NAME")
  
         dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", user, password, host, port, dbname)
-        fmt.Println("DSN:", dsn)
         db, err = sql.Open("mysql", dsn)
         if err != nil {
             log.Fatalf("Failed to open DB: %v", err)

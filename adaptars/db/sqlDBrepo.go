@@ -2,9 +2,10 @@ package adaptars
 
 import (
 	"BankingSystem/Core/domain"
+	 "BankingSystem/customErrors"
 	"database/sql"
-	"log"
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -21,9 +22,9 @@ func (c *CustomerSqlDB)SaveCustomer(customer domain.Customer)error{
 	_,err:=c.db.Exec("INSERT INTO Customer (CustomerId , Name , Email , Phone , AccountType) VALUES (?,?,?,?,?)",customer.CustomerId,
          customer.Name,customer.Email,customer.Phone,customer.AccountType)
 	if err!=nil{
-		log.Printf("Error inserting data into Customer %v",err)
+	    return customerrors.NewRepoError("SaveCustomer",err)
 	}
-	return err
+	return nil
 }
 
 
@@ -42,8 +43,8 @@ func(d *AccountSqlDB) GetPin(accountNo string)(string,error){
 	accountNo1:=strings.TrimSpace(accountNo)
 	err:=d.db.QueryRow("SELECT Pin from Account WHERE AccountNo=?",accountNo1).Scan(&pin)
 	if err!=nil{
-		log.Printf("Unable to get pin from the database %v",err)
-		return "",err
+		log.Printf("Invalid User %v",err)
+		return "",customerrors.NewRepoError("Invalid User",err)
 	}
 	log.Println(pin)
 	return pin,nil
@@ -51,12 +52,13 @@ func(d *AccountSqlDB) GetPin(accountNo string)(string,error){
 
 func(d *AccountSqlDB)ChangePin(accountNo string,Pin string)error{
 
-	result,err:=d.db.Exec("UPDATE Account SET Pin=? Where AccountNo=?",Pin,accountNo)
+	result,err:=d.db.Exec("UPDATE Account SET Pin=? WHERE AccountNo=?",Pin,accountNo)
 	if err!=nil{
 		return err
 	}
 	rowsAffected,err:=result.RowsAffected()
     if err!=nil{
+		log.Println(err)
 		return err
 	}
 
@@ -74,6 +76,7 @@ func(d *AccountSqlDB)SaveAccount(AccountNo string,customerId string,accountType 
 
 	if err!=nil{
 		 log.Printf("failed to create an account %v",err)
+		 return customerrors.NewRepoError("SaveAccount",err)
 	}
 
 	return nil
@@ -85,7 +88,7 @@ func (d *AccountSqlDB)GetAccountDetails(AccountNo string)(domain.Account,error){
 	rows:=d.db.QueryRow("SELECT * From Account WHERE AccountNo=?",AccountNo)
 	err:=rows.Scan(&Account.AccountNo,&Account.CustomerId,&Account.AccountType,&Account.Balance,&Account.Pin)
 	if err!=nil{
-		return domain.Account{},err
+		return domain.Account{},customerrors.NewRepoError("GetAccountDetais",err)
 	}
 	return Account,nil
 }
@@ -94,8 +97,7 @@ func(d *AccountSqlDB)GetBalance(accountNo string)(float64,error){
 	var balance float64
 	err:=d.db.QueryRow("SELECT Balance from Account WHERE AccountNo=?",accountNo).Scan(&balance)
 	if err!=nil{
-		log.Printf("Unable to get pin from the database %v",err)
-		return 0,err
+		return 0,customerrors.NewRepoError("GetBalance",err)
 	}
  
 	return balance,nil
@@ -105,15 +107,15 @@ func(d *AccountSqlDB)SaveBalance(accountNo string,amount float64)error{
 
    result,err:=d.db.Exec("UPDATE Account SET Balance=? Where AccountNo=?",amount,accountNo)
 	if err!=nil{
-		return err
+		return customerrors.NewRepoError("SaveBalance: query Unsuccessfull",err)
 	}
 	rowsAffected,err:=result.RowsAffected()
     if err!=nil{
-		return err
+		return customerrors.NewRepoError("SaveBalance",err)
 	}
 
 	if rowsAffected==0{
-		return fmt.Errorf("no acccount with this accountNo %v",accountNo)
+		return customerrors.NewRepoError("SaveBalance",err)
 	}
 
 	return nil
@@ -127,14 +129,14 @@ func NewTransaction(db *sql.DB)*TransactionSqlDB{
 	return &TransactionSqlDB{db:db}
 }
 
-func(t *TransactionSqlDB)SaveTransction(transactionId string,fromAccountNo string,toAccountNo string,Amount float64,time string,status string)error{
+func(t *TransactionSqlDB)SaveTransaction(transactionId string,fromAccountNo string,toAccountNo string,Amount float64,time string,status string)error{
 
 	_ ,err:=t.db.Exec("INSERT INTO Transaction(TransactionId,FromAccountId,ToAccountId,AMOUNT,TimeStamp,Status) VALUES (?,?,?,?,?,?)",transactionId,fromAccountNo,
 	toAccountNo,Amount,time,status)
 
 	if err!=nil{
 		 log.Printf("failed to do transaction %v",err)
-		 return err
+		 return customerrors.NewRepoError("saveTransaction: Failed to do Transaction",err)
 	}
 
 	return nil
@@ -150,8 +152,10 @@ func(t *TransactionSqlDB)GetTransactionDetail(transactionId string)(domain.Trans
 
 	if err!=nil{
 		log.Printf("Unable to get pin from the database %v",err)
-		return domain.Transaction{},err
+		return domain.Transaction{},customerrors.NewRepoError("GetTransactionDetail",err)
 	}
  
 	return Transaction,nil
 }
+
+

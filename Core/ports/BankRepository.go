@@ -16,6 +16,6 @@ type AccountRepository interface{
 }
 
 type TransactionRepository interface{
-	SaveTransction(transactionId string,fromAccountNo string,toAcountNo string,Amount float64,timestamp string,status string)error
+	SaveTransaction(transactionId string,fromAccountNo string,toAcountNo string,Amount float64,timestamp string,status string)error
 	GetTransactionDetail(transactionId string)(domain.Transaction,error)
 }

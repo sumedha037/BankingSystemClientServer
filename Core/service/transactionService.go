@@ -3,19 +3,11 @@ package service
 import (
 	"BankingSystem/Core/domain"
 	"BankingSystem/Core/ports"
+	customerrors "BankingSystem/customErrors"
 	"fmt"
-	"time"
 	"log"
+	"time"
 )
-
-// type TransactionService interface{
-//   WithDraw(accountNo string,Amount float64)error
-// 	 Deposite(accountNo string,Amount float64)error
-// 	 Transfer(fromAccount domain.Account,toAcountNo string,Amount float64)(domain.Transaction,error)
-// 	 SetPin(accountNo string,OldPin string,NewPin string)error
-// }
-
-
 
 type BankingService struct{
      AccountRepo ports.AccountRepository
@@ -30,28 +22,32 @@ func NewBankingService(a ports.AccountRepository,c ports.CustomerRepository,t po
 
 func(b *BankingService) Withdraw(accountno string,amount float64,Pin string)error{
 
-	ok,err:=b.ValidateUser(accountno,Pin);if!ok{
-		return err
+	ok,err:=b.ValidateUser(accountno,Pin);if !ok {
+		return customerrors.NewServiceError("Withdraw: Unauthorized User",err)
 	}
+	    if amount<=0{
+			return customerrors.NewServiceError("WithDraw DecreaseAmount",fmt.Errorf("negative amount"))
+		}
+		err=b.DecreaseAmount(accountno,amount)
+		if err!=nil{
+			return customerrors.NewServiceError("WithDraw DecreaseAmount",err)
+		}
 
-	 balance,_:=b.AccountRepo.GetBalance(accountno)
-	 if balance>amount{
-		b.DecreaseAmount(accountno,amount)
-	 }
 	 return nil
 }
 
 func(b *BankingService) Deposite(accountno string,amount float64,Pin string)error{
 	ok,err:=b.ValidateUser(accountno,Pin);if!ok{
-		return err
+		return customerrors.NewServiceError("Withdraw:Unauthorized User",err)
 	}
-	if amount>0{
+   
+	if amount<=0{
+		return customerrors.NewServiceError("Deposite Incraese Amount",fmt.Errorf("negative amount"))
+	}else{
 		err:=b.IncreaseAmount(accountno,amount)
 	    if err!=nil{
-			return err
+			return customerrors.NewServiceError("Deposite Incraese Amount",err)
 		}
-	}else{
-		return fmt.Errorf("amount is less than zero")
 	}
   return nil
 }
@@ -59,10 +55,13 @@ func(b *BankingService) Deposite(accountno string,amount float64,Pin string)erro
 func(b *BankingService) Transfer(fromAccountNo string,fromAccountPin string,toAcountNo string,Amount float64)(string,error){
     var status string
 
-	ok,err:=b.ValidateUser(fromAccountNo,fromAccountPin);if !ok{
-		return "Invalid Pin",err
+	if fromAccountNo==toAcountNo{
+		return "",customerrors.NewServiceError("Transfer: r",fmt.Errorf("cannot transfer money in same account"))
 	}
 
+	ok,err:=b.ValidateUser(fromAccountNo,fromAccountPin);if !ok{
+		return "",customerrors.NewServiceError("Transfer:Unauthorized User",err)
+	}
 
 	id:=b.GenerateSequentialID(8)
 
@@ -71,37 +70,39 @@ func(b *BankingService) Transfer(fromAccountNo string,fromAccountPin string,toAc
 
 	err=b.DecreaseAmount(fromAccountNo,Amount)
 	if err!=nil{
-		status="Failed"
+		return "",customerrors.NewServiceError("transfer",err)
 	}
 	err=b.IncreaseAmount(toAcountNo,Amount)
 	if err!=nil{
-		status="Failed"
+		return "",customerrors.NewServiceError("transfer",err)
 	}
 
 	status="Successfull"
 
-	b.TransactionRepo.SaveTransction(id,fromAccountNo,toAcountNo,Amount,formattedTime,status)
+	b.TransactionRepo.SaveTransaction(id,fromAccountNo,toAcountNo,Amount,formattedTime,status)
 	 return id,nil
 }
+
 
 func(b *BankingService)SetPin(accountNo string,OldPin string, NewPin string)error{
 
 	ok,err:=b.ValidateUser(accountNo,OldPin);if !ok{
-		return err
+		return customerrors.NewServiceError("SetPin:Unauthorized User",err)
 	}
   
 	err=b.AccountRepo.ChangePin(accountNo,NewPin)
 	if err!=nil{
-		return err
+		return customerrors.NewServiceError("Change Pin",err)
 	}
 	return nil
 }
+
 
 func(b *BankingService)CreateAccount(customer domain.Customer)domain.Account{
 	var account domain.Account
    err:= b.CustomerRepo.SaveCustomer(customer)
    if err!=nil{
-	log.Println("failed to save customer in database")
+	log.Printf("failed to save customer in database %v",err)
 	return domain.Account{}
    }
 
@@ -127,14 +128,13 @@ func(b *BankingService)CreateAccount(customer domain.Customer)domain.Account{
 func(b *BankingService) Balance(accountno string,Pin string)(float64,error){
 
 	 ok,err:=b.ValidateUser(accountno,Pin);if !ok{
-		log.Println("Unauthorized User")
-		return 0,err
+		return 0,customerrors.NewServiceError("Balance Unauthorized User",err)
 	 }
 
 	 balance,err:=b.AccountRepo.GetBalance(accountno)
 	 if err!=nil{
 		log.Println("failed to get the balance")
-		return 0,err
+		return 0,customerrors.NewServiceError("Balance",err)
 	 }
 	 
 	 return balance,nil
