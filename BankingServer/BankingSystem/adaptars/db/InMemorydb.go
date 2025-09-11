@@ -1,4 +1,4 @@
-package adaptars
+package db
 
 import (
 	"BankingSystem/Core/domain"
