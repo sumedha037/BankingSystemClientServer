@@ -1,4 +1,4 @@
-package adaptars
+package db
 
 import (
 	"BankingSystem/Core/domain"
@@ -103,9 +103,9 @@ func(d *AccountSqlDB)GetBalance(accountNo string)(float64,error){
 	return balance,nil
 }
 
-func(d *AccountSqlDB)SaveBalance(accountNo string,amount float64)error{
+func(d *AccountSqlDB)SaveBalance(tx *sql.Tx,accountNo string,amount float64)error{
 
-   result,err:=d.db.Exec("UPDATE Account SET Balance=? Where AccountNo=?",amount,accountNo)
+   result,err:=tx.Exec("UPDATE Account SET Balance=? Where AccountNo=?",amount,accountNo)
 	if err!=nil{
 		return customerrors.NewRepoError("SaveBalance: query Unsuccessfull",err)
 	}

@@ -4,6 +4,7 @@ import (
 	"BankingSystem/Core/domain"
 	"BankingSystem/Core/ports"
 	customerrors "BankingSystem/customErrors"
+	"BankingSystem/dbInstance"
 	"fmt"
 	"log"
 	"time"
@@ -25,13 +26,27 @@ func(b *BankingService) Withdraw(accountno string,amount float64,Pin string)erro
 	ok,err:=b.ValidateUser(accountno,Pin);if !ok {
 		return customerrors.NewServiceError("Withdraw: Unauthorized User",err)
 	}
+
+	db:=dbInstance.GetInstance()
+
+	tx,err:=db.Begin();if err!=nil{
+		return customerrors.NewServiceError("Transfer:",err)
+	}
+   
+	defer func(){
+		r:=recover();if r!=nil{
+			tx.Rollback()
+			log.Println(r)
+		}
+	}()
 	    if amount<=0{
 			return customerrors.NewServiceError("WithDraw DecreaseAmount",fmt.Errorf("negative amount"))
 		}
-		err=b.DecreaseAmount(accountno,amount)
+		err=b.DecreaseAmount(tx,accountno,amount)
 		if err!=nil{
 			return customerrors.NewServiceError("WithDraw DecreaseAmount",err)
 		}
+		tx.Commit()
 
 	 return nil
 }
@@ -40,15 +55,29 @@ func(b *BankingService) Deposite(accountno string,amount float64,Pin string)erro
 	ok,err:=b.ValidateUser(accountno,Pin);if!ok{
 		return customerrors.NewServiceError("Withdraw:Unauthorized User",err)
 	}
+
+	db:=dbInstance.GetInstance()
+
+	tx,err:=db.Begin();if err!=nil{
+		return customerrors.NewServiceError("Transfer:",err)
+	}
    
+	defer func(){
+		r:=recover();if r!=nil{
+			tx.Rollback()
+			log.Println(r)
+		}
+	}()
+
 	if amount<=0{
 		return customerrors.NewServiceError("Deposite Incraese Amount",fmt.Errorf("negative amount"))
-	}else{
-		err:=b.IncreaseAmount(accountno,amount)
+	}
+
+	err=b.IncreaseAmount(tx,accountno,amount)
 	    if err!=nil{
 			return customerrors.NewServiceError("Deposite Incraese Amount",err)
 		}
-	}
+	tx.Commit()
   return nil
 }
 
@@ -63,21 +92,39 @@ func(b *BankingService) Transfer(fromAccountNo string,fromAccountPin string,toAc
 		return "",customerrors.NewServiceError("Transfer:Unauthorized User",err)
 	}
 
+	db:=dbInstance.GetInstance()
+
+	tx,err:=db.Begin();if err!=nil{
+		return "",customerrors.NewServiceError("Transfer:",err)
+	}
+	defer tx.Rollback()
+
+	defer func(){
+		r:=recover();if r!=nil{
+			tx.Rollback()
+			log.Println(r)
+		}
+	}()
+
 	id:=b.GenerateSequentialID(8)
 
 	timestamp:=time.Now()
 	formattedTime := timestamp.Format("2006-01-02 15:04:05")
 
-	err=b.DecreaseAmount(fromAccountNo,Amount)
+	err=b.DecreaseAmount(tx,fromAccountNo,Amount)
 	if err!=nil{
+		tx.Rollback()
 		return "",customerrors.NewServiceError("transfer",err)
 	}
-	err=b.IncreaseAmount(toAcountNo,Amount)
+	err=b.IncreaseAmount(tx,toAcountNo,Amount)
 	if err!=nil{
+		tx.Rollback()
 		return "",customerrors.NewServiceError("transfer",err)
 	}
 
 	status="Successfull"
+
+	tx.Commit()
 
 	b.TransactionRepo.SaveTransaction(id,fromAccountNo,toAcountNo,Amount,formattedTime,status)
 	 return id,nil

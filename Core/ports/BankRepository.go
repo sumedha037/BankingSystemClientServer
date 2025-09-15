@@ -1,6 +1,7 @@
 package ports
 
 import "BankingSystem/Core/domain"
+import "database/sql"
 
 type CustomerRepository interface {
 	SaveCustomer(customer domain.Customer)error
@@ -12,7 +13,7 @@ type AccountRepository interface{
   	SaveAccount(AccountNo string,customerId string,accountType string,Balance float64,Pin string)(error)
 	GetAccountDetails(AccountNo string)(domain.Account,error)
 	GetBalance(accountNo string)(float64,error)
-	SaveBalance(accountNo string,amount float64)error
+	SaveBalance(tx *sql.Tx,accountNo string,amount float64)error
 }
 
 type TransactionRepository interface{

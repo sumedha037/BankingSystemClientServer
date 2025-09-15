@@ -212,3 +212,32 @@ func TestCreateAccount(t *testing.T){
 	assert.Equal(t,http.StatusOK,resp.StatusCode)
 }
 
+
+func TestAuthHandler(t *testing.T){
+account:=domain.Account{
+		AccountNo: "abc123",
+		CustomerId: "cust1",
+		AccountType: "Saving Account",
+		Balance: 30000,
+		Pin: "000123",
+	}
+
+	AccountDB:=adaptars.NewAccountDB()
+	b:=service.NewBankingService(AccountDB,nil,nil)
+
+	AccountDB.Account["abc123"]=account
+
+	
+	body:=`{"AccountNo":"abc123","Pin":"000123"}`
+	req:=httptest.NewRequest(http.MethodPost,"/Login",strings.NewReader(body))
+	w:=httptest.NewRecorder()
+
+	h:=NewHandler(b)
+
+	h.Login(w,req)
+
+	resp:=w.Result()
+
+	assert.Equal(t,http.StatusOK,resp.StatusCode)
+}
+

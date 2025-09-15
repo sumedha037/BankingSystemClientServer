@@ -2,6 +2,7 @@ package service
 
 import (
 	customerrors "BankingSystem/customErrors"
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -26,7 +27,7 @@ func(b *BankingService) ValidateUser(accountNo string,Pin string)(bool,error){
 
 
 
-func (b *BankingService) IncreaseAmount(accountNo string,amount float64)error{
+func (b *BankingService) IncreaseAmount(tx *sql.Tx,accountNo string,amount float64)error{
    currentAmount,err:=b.AccountRepo.GetBalance(accountNo)
   if err!=nil{
     log.Printf("unable to get current balance %v",err)
@@ -37,12 +38,12 @@ func (b *BankingService) IncreaseAmount(accountNo string,amount float64)error{
     return customerrors.NewServiceError("IncreaseAmount",fmt.Errorf("amount less than zero"))
   }
   currentAmount+=amount
-  return b.AccountRepo.SaveBalance(accountNo,currentAmount)
+  return b.AccountRepo.SaveBalance(tx,accountNo,currentAmount)
 }
 
 
 
-func (b *BankingService) DecreaseAmount(accountNo string,amount float64)error{
+func (b *BankingService) DecreaseAmount(tx *sql.Tx,accountNo string,amount float64)error{
    currentAmount,err:=b.AccountRepo.GetBalance(accountNo)
   if err!=nil{
     log.Printf("unable to get current balance %v",err)
@@ -55,7 +56,7 @@ func (b *BankingService) DecreaseAmount(accountNo string,amount float64)error{
     return customerrors.NewServiceError("DecreaseAmount",fmt.Errorf("insufficient Amount"))
   }
   currentAmount-=amount
-  return b.AccountRepo.SaveBalance(accountNo,currentAmount)
+  return b.AccountRepo.SaveBalance(tx,accountNo,currentAmount)
 }
 
 func (b *BankingService) GenerateSequentialID(length int) string {

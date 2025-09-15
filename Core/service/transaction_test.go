@@ -224,7 +224,7 @@ func TestIncreaseAmount(t *testing.T){
 	}
     AccountDB.Account["ab123"]=account1
 
-	err:=b.IncreaseAmount("ab123",1000)
+	err:=b.IncreaseAmount(nil,"ab123",1000)
 	if err!=nil{
 		t.Error("error not expected")
 	}
@@ -251,7 +251,7 @@ func TestDecreaseAmount(t *testing.T){
 	}
     AccountDB.Account["ab123"]=account1
 	
-	err:=b.DecreaseAmount("ab123",1000)
+	err:=b.DecreaseAmount(nil,"ab123",1000)
 	if err!=nil{
 		t.Error("error not expected")
 	}

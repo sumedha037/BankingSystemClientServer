@@ -1,4 +1,4 @@
-package adaptars
+package db
 
 
 
@@ -187,7 +187,7 @@ func TestSaveBalance(t *testing.T){
       amount:=3000.00
      mock.ExpectExec(`(?i)UPDATE\s+Account\s+SET\s+Balance\s*=\s*\?\s+WHERE\s+AccountNo\s*=\s*\?`).WithArgs(amount,account.AccountNo).WillReturnResult(sqlmock.NewResult(1,1))
 
-    err = repo.SaveBalance(account.AccountNo,amount)
+    err = repo.SaveBalance(nil,account.AccountNo,amount)
     if err != nil {
         t.Errorf("Expected no error, got %v", err)
     }

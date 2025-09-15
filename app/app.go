@@ -5,6 +5,7 @@ import (
 	adaptars "BankingSystem/adaptars/db"
 	"BankingSystem/adaptars/handlers"
 	"BankingSystem/middleware"
+	"BankingSystem/dbInstance"
 
 	"log"
 	"net/http"
@@ -14,7 +15,7 @@ import (
 
 func Start(){
 
-    database := GetInstance()
+    database := dbInstance.GetInstance()
  
    CustomerRepo:=adaptars.NewCustomer(database)
    AccountRepo:=adaptars.NewAccount(database)
